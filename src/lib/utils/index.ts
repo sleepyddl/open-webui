@@ -397,9 +397,9 @@ export const generateInitialsImage = (name) => {
 	const initials =
 		sanitizedName.length > 0
 			? sanitizedName[0] +
-				(sanitizedName.split(' ').length > 1
-					? sanitizedName[sanitizedName.lastIndexOf(' ') + 1]
-					: '')
+			(sanitizedName.split(' ').length > 1
+				? sanitizedName[sanitizedName.lastIndexOf(' ') + 1]
+				: '')
 			: '';
 
 	ctx.fillText(initials.toUpperCase(), canvas.width / 2, canvas.height / 2);
@@ -511,28 +511,27 @@ export const copyToClipboard = async (text, html = null, formatted = false) => {
 	} else {
 		let result = false;
 		if (!navigator.clipboard) {
-			const textArea = document.createElement('textarea');
-			textArea.value = text;
+			const div: HTMLDivElement = document.createElement('div');
+			div.style.cssText = 'position:fixed;left:-9999px;top:-9999px;white-space:pre;';
+			div.textContent = text;
+			document.body.appendChild(div);
 
-			// Avoid scrolling to bottom
-			textArea.style.top = '0';
-			textArea.style.left = '0';
-			textArea.style.position = 'fixed';
-
-			document.body.appendChild(textArea);
-			textArea.focus({ preventScroll: true });
-			textArea.select();
+			const range: Range = document.createRange();
+			range.selectNodeContents(div);
+			const selection: Selection | null = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
 
 			try {
-				const successful = document.execCommand('copy');
-				const msg = successful ? 'successful' : 'unsuccessful';
-				console.log('Fallback: Copying text command was ' + msg);
+				const successful: boolean = document.execCommand('copy');
+				console.log('Fallback: Copying text command was ' + (successful ? 'successful' : 'unsuccessful'));
 				result = true;
 			} catch (err) {
 				console.error('Fallback: Oops, unable to copy', err);
 			}
 
-			document.body.removeChild(textArea);
+			selection?.removeAllRanges();
+			document.body.removeChild(div);
 			return result;
 		}
 
@@ -555,10 +554,10 @@ export const compareVersion = (latest, current) => {
 	return current === '0.0.0'
 		? false
 		: current.localeCompare(latest, undefined, {
-				numeric: true,
-				sensitivity: 'case',
-				caseFirst: 'upper'
-			}) < 0;
+			numeric: true,
+			sensitivity: 'case',
+			caseFirst: 'upper'
+		}) < 0;
 };
 
 export const extractCurlyBraceWords = (text) => {
