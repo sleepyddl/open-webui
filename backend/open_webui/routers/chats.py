@@ -829,10 +829,7 @@ async def get_shared_chat_by_id(
     if user.role == 'pending':
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND)
 
-    if user.role == 'admin' and ENABLE_ADMIN_CHAT_ACCESS:
-        chat = await Chats.get_chat_by_id(share_id, db=db)
-    else:
-        chat = await Chats.get_chat_by_share_id(share_id, db=db)
+    chat = await Chats.get_chat_by_share_id(share_id, db=db)
 
     if not chat:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND)
@@ -840,13 +837,17 @@ async def get_shared_chat_by_id(
     # Look up the original chat_id to check access grants
     shared = await SharedChats.get_by_id(share_id, db=db)
     if shared:
-        has_grant = await AccessGrants.has_access(
-            user_id=user.id,
-            resource_type='shared_chat',
-            resource_id=shared.chat_id,
-            permission='read',
-            db=db,
-        )
+        has_grant = False
+        if user.role == 'admin' and ENABLE_ADMIN_CHAT_ACCESS:
+            has_grant=True
+        else:
+            has_grant = await AccessGrants.has_access(
+                user_id=user.id,
+                resource_type='shared_chat',
+                resource_id=shared.chat_id,
+                permission='read',
+                db=db,
+            )
         if not has_grant:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
